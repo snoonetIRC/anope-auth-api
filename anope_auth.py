@@ -15,6 +15,10 @@ xmlrpc_client = ServerProxy(XMLRPC_ENDPOINT, context=ctx)
 
 app = Flask(__name__)
 
+ERROR_MAP = {
+    "Invalid password": "no_auth",
+}
+
 
 @app.route('/login', methods=['POST'])
 def check_auth():
@@ -26,11 +30,18 @@ def check_auth():
     data = xmlrpc_client.checkAuthentication(username, password)
     error = data.get('error')
     if error:
-        return jsonify({'error': error})
+        error_msg = ERROR_MAP.get(error, "other")
+        account = None
+        message = error
+    else:
+        error_msg = None
+        account = data['account']
+        message = data['result']
 
     return jsonify({
-        'account': data['account'],
-        'result': data['result'],
+        'account': account,
+        'error': error_msg,
+        'message': message,
     })
 
 
