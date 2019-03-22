@@ -26,8 +26,14 @@ def check_auth():
     password = request.form.get('password', '')
     if not username.strip() or not password.strip():
         abort(400)
+        return
 
-    data = xmlrpc_client.checkAuthentication(username, password)
+    try:
+        data = xmlrpc_client.checkAuthentication(username, password)
+    except ConnectionRefusedError:
+        abort(500)
+        return
+
     error = data.get('error')
     if error:
         error_msg = ERROR_MAP.get(error, "other")
