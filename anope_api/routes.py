@@ -3,7 +3,8 @@ import ssl
 from xmlrpc.client import ServerProxy
 
 from flask import jsonify, request, abort
-from flask.app import Flask
+
+from . import app
 
 XMLRPC_ENDPOINT = os.getenv('XMLRPC_ENDPOINT') or "https://127.0.0.1:8443/xmlrpc"
 
@@ -12,8 +13,6 @@ ctx = ssl.create_default_context()
 ctx.check_hostname = False
 
 xmlrpc_client = ServerProxy(XMLRPC_ENDPOINT, context=ctx)
-
-app = Flask(__name__)
 
 ERROR_MAP = {
     "Invalid password": "no_auth",
@@ -49,7 +48,3 @@ def check_auth():
         'error': error_msg,
         'message': message,
     })
-
-
-if __name__ == '__main__':
-    app.run()
