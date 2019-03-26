@@ -1,19 +1,7 @@
-import os
-import ssl
-from xmlrpc.client import ServerProxy
-
 from flask import jsonify, request, abort
 from werkzeug.exceptions import BadRequest, InternalServerError
 
 from . import app
-
-XMLRPC_ENDPOINT = os.getenv('XMLRPC_ENDPOINT') or "https://127.0.0.1:8443/xmlrpc"
-
-ctx = ssl.create_default_context()
-# most likely connecting over localhost, so ignore cert names
-ctx.check_hostname = False
-
-xmlrpc_client = ServerProxy(XMLRPC_ENDPOINT, context=ctx)
 
 ERROR_MAP = {
     "Invalid password": "no_auth",
@@ -40,9 +28,11 @@ def check_auth():
         return abort(BadRequest("Username or password is empty"))
 
     try:
-        data = xmlrpc_client.checkAuthentication(username, password)
+        data = app.xmlrpc_client.checkAuthentication(username, password)
     except ConnectionRefusedError:
-        return abort(InternalServerError("Unable to connect to authentication backend"))
+        return abort(InternalServerError(
+            "Unable to connect to authentication backend"
+        ))
 
     error = data.get('error')
     if error:

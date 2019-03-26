@@ -1,9 +1,31 @@
-from flask import Flask
+def create_xmlrpc_client(instance):
+    from xmlrpc.client import ServerProxy
 
-from .config import Config
+    def _setdefault(key, default=None):
+        return instance.config.setdefault(key, default)
 
-app = Flask(__name__)
+    import ssl
+    ssl_context = ssl.create_default_context()
 
-app.config.from_object(Config)
+    ssl_context.check_hostname = _setdefault("XMLRPC_TLS_CHECK_HOSTNAME", True)
 
-from . import routes
+    uri = _setdefault("XMLRPC_URI", "https://127.0.0.1:8443/xmlrpc")
+
+    return ServerProxy(uri, context=ssl_context)
+
+
+def create_instance():
+    from flask import Flask
+    from .config import Config
+    instance = Flask(__name__)
+
+    instance.config.from_object(Config)
+
+    instance.xmlrpc_client = create_xmlrpc_client(instance)
+
+    from . import routes
+
+    return instance
+
+
+app = create_instance()
