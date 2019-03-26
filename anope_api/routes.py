@@ -3,6 +3,7 @@ import ssl
 from xmlrpc.client import ServerProxy
 
 from flask import jsonify, request, abort
+from werkzeug.exceptions import BadRequest, InternalServerError
 
 from . import app
 
@@ -21,17 +22,27 @@ ERROR_MAP = {
 
 @app.route('/login', methods=['POST'])
 def check_auth():
-    username = request.form.get('username', '')
-    password = request.form.get('password', '')
+    if request.content_type == 'application/json':
+        request_data = request.json
+    else:
+        request_data = request.form
+
+    if not request_data:
+        return abort(BadRequest("Missing request data"))
+
+    try:
+        username = request_data['username']
+        password = request_data['password']
+    except KeyError as e:
+        return abort(BadRequest("Missing {!r} field".format(e.args[0])))
+
     if not username.strip() or not password.strip():
-        abort(400)
-        return
+        return abort(BadRequest("Username or password is empty"))
 
     try:
         data = xmlrpc_client.checkAuthentication(username, password)
     except ConnectionRefusedError:
-        abort(500)
-        return
+        return abort(InternalServerError("Unable to connect to authentication backend"))
 
     error = data.get('error')
     if error:
