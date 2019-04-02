@@ -1,15 +1,33 @@
 from flask import jsonify, request, abort
-from werkzeug.exceptions import BadRequest, InternalServerError
+from werkzeug.exceptions import BadRequest, InternalServerError, Unauthorized, Forbidden
 
 from . import app
+from .api_keys import KEYS
 
 ERROR_MAP = {
     "Invalid password": "no_auth",
 }
 
 
+def check_api_key():
+    auth_header = request.headers['Authorization']
+    auth_type, data = auth_header.split(None, 1)
+    if auth_type.lower() != 'bearer':
+        return abort(Unauthorized())
+
+    key = KEYS.get(data)
+    if not key:
+        return abort(Unauthorized())
+
+    if not key['active']:
+        return abort(Forbidden())
+
+    return True
+
+
 @app.route('/login', methods=['POST'])
 def check_auth():
+    check_api_key()
     if request.content_type == 'application/json':
         request_data = request.json
     else:
