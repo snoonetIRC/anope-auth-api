@@ -1,8 +1,10 @@
+from flask import Blueprint, current_app
 from flask import jsonify, request, abort
 from werkzeug.exceptions import BadRequest, InternalServerError, Unauthorized, Forbidden
 
-from . import app
-from .api_keys import KEYS
+from ..api_keys import KEYS
+
+auth_bp = Blueprint('auth', __name__)
 
 ERROR_MAP = {
     "Invalid password": "no_auth",
@@ -29,7 +31,7 @@ def check_api_key():
     return True
 
 
-@app.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def check_auth():
     check_api_key()
     if request.content_type == 'application/json':
@@ -50,7 +52,7 @@ def check_auth():
         return abort(BadRequest("Username or password is empty"))
 
     try:
-        data = app.xmlrpc_client.checkAuthentication(username, password)
+        data = current_app.xmlrpc_client.checkAuthentication(username, password)
     except ConnectionRefusedError:
         return abort(InternalServerError(
             "Unable to connect to authentication backend"

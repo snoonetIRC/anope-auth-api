@@ -23,9 +23,10 @@ def create_instance():
 
     instance.xmlrpc_client = create_xmlrpc_client(instance)
 
+    from anope_api.views.auth import auth_bp
+    instance.register_blueprint(auth_bp)
+
     return instance
 
 
 app = create_instance()
-
-from . import routes
