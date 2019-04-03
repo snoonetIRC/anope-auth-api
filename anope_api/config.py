@@ -25,4 +25,4 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
 
     XMLRPC_URI = os.getenv('XMLRPC_URI') or os.getenv('XMLRPC_ENDPOINT')
-    XMLRPC_TLS_CHECK_HOSTNAME = get_bool(os.getenv('XMLRPC_TLS_CHECK_HOSTNAME'))
+    XMLRPC_TLS_CHECK_HOSTNAME = get_bool(os.getenv('XMLRPC_TLS_CHECK_HOSTNAME') or 'true')
