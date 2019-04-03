@@ -23,9 +23,9 @@ def create_instance():
 
     instance.xmlrpc_client = create_xmlrpc_client(instance)
 
-    from . import routes
-
     return instance
 
 
 app = create_instance()
+
+from . import routes
