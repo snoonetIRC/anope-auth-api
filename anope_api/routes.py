@@ -10,7 +10,11 @@ ERROR_MAP = {
 
 
 def check_api_key():
-    auth_header = request.headers['Authorization']
+    try:
+        auth_header = request.headers['Authorization']
+    except KeyError:
+        return abort(Unauthorized())
+
     auth_type, data = auth_header.split(None, 1)
     if auth_type.lower() != 'bearer':
         return abort(Unauthorized())
