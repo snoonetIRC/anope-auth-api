@@ -1,6 +1,6 @@
-from flask import Blueprint, current_app
-from flask import jsonify, request, abort
-from werkzeug.exceptions import BadRequest, InternalServerError, Unauthorized, Forbidden
+import requests
+from flask import abort, Blueprint, current_app, jsonify, request
+from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
 
 from ..api_keys import KEYS
 
@@ -31,9 +31,7 @@ def check_api_key():
     return True
 
 
-@auth_bp.route('/login', methods=['POST'])
-def check_auth():
-    check_api_key()
+def get_request_data():
     if request.content_type == 'application/json':
         request_data = request.json
     else:
@@ -42,34 +40,49 @@ def check_auth():
     if not request_data:
         return abort(BadRequest("Missing request data"))
 
+    return request_data
+
+
+def get_params(*args):
+    data = get_request_data()
+    out = {}
     try:
-        username = request_data['username']
-        password = request_data['password']
-    except KeyError as e:
-        return abort(BadRequest("Missing {!r} field".format(e.args[0])))
+        for arg in args:
+            out[arg] = data[arg]
+    except KeyError:
+        return abort(BadRequest("Missing {!r} value".format(e.args[0])))
 
-    if not username.strip() or not password.strip():
-        return abort(BadRequest("Username or password is empty"))
+    return out
 
-    try:
-        data = current_app.xmlrpc_client.checkAuthentication(username, password)
-    except ConnectionRefusedError:
-        return abort(InternalServerError(
-            "Unable to connect to authentication backend"
-        ))
 
-    error = data.get('error')
-    if error:
-        error_msg = ERROR_MAP.get(error, "other")
-        account = None
-        message = error
-    else:
-        error_msg = None
-        account = data['account']
-        message = data['result']
+def do_request(endpoint, *args):
+    check_api_key()
+    request_data = get_params(*args)
 
-    return jsonify({
-        'account': account,
-        'error': error_msg,
-        'message': message,
-    })
+    with requests.post(
+            current_app.config['API_URL'] + endpoint, data=request_data
+    ) as response:
+        response.raise_for_status()
+        response_data = response.json()
+
+    return jsonify(response_data)
+
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    return do_request('/login', 'username', 'password')
+
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    return do_request('/logout', 'session')
+
+
+@auth_bp.route('/register', methods=['POST'])
+def check_auth():
+    return do_request('/register', 'username', 'password', 'email', 'source')
+
+
+@auth_bp.route('/confirm', methods=['POST'])
+def check_auth():
+    return do_request('/confirm', 'session', 'code')
