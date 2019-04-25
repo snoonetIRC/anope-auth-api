@@ -60,7 +60,8 @@ def do_request(endpoint, *args):
     request_data = get_params(*args)
 
     with requests.post(
-            current_app.config['API_URL'] + endpoint, data=request_data
+            current_app.config['API_URL'] + endpoint, data=request_data,
+            headers={'X-Real-IP': request.access_route[0]},
     ) as response:
         response.raise_for_status()
         response_data = response.json()
