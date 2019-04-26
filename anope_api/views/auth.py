@@ -49,7 +49,7 @@ def get_params(*args):
     try:
         for arg in args:
             out[arg] = data[arg]
-    except KeyError:
+    except KeyError as e:
         return abort(BadRequest("Missing {!r} value".format(e.args[0])))
 
     return out
