@@ -1,5 +1,5 @@
 import requests
-from flask import abort, Blueprint, current_app, jsonify, request
+from flask import abort, Blueprint, current_app, jsonify, request, Response
 from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
 
 from ..api_keys import KEYS
@@ -63,10 +63,13 @@ def do_request(endpoint, *args):
             current_app.config['API_URL'] + endpoint, data=request_data,
             headers={'X-Real-IP': request.access_route[0]},
     ) as response:
-        response.raise_for_status()
+        status = response.status_code
         response_data = response.json()
 
-    return jsonify(response_data)
+    response = jsonify(response_data)  # type: Response
+    response.status_code = status
+
+    return response
 
 
 @auth_bp.route('/login', methods=['POST'])
