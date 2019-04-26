@@ -28,7 +28,7 @@ def check_api_key():
     if not key['active']:
         return abort(Forbidden())
 
-    return True
+    return key['name']
 
 
 def get_request_data():
@@ -56,8 +56,9 @@ def get_params(*args):
 
 
 def do_request(endpoint, *args):
-    check_api_key()
+    key_name = check_api_key()
     request_data = get_params(*args)
+    request_data['client_id'] = key_name
 
     with requests.post(
             current_app.config['API_URL'] + endpoint, data=request_data,
