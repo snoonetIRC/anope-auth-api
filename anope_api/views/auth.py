@@ -83,10 +83,10 @@ def logout():
 
 
 @auth_bp.route('/register', methods=['POST'])
-def check_auth():
+def register():
     return do_request('/register', 'username', 'password', 'email', 'source')
 
 
 @auth_bp.route('/confirm', methods=['POST'])
-def check_auth():
+def confirm():
     return do_request('/confirm', 'session', 'code')
