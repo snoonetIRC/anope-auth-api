@@ -15,18 +15,18 @@ def check_api_key():
     try:
         auth_header = request.headers['Authorization']
     except KeyError:
-        return abort(Unauthorized())
+        raise Unauthorized()
 
     auth_type, data = auth_header.split(None, 1)
     if auth_type.lower() != 'bearer':
-        return abort(Unauthorized())
+        raise Unauthorized()
 
     key = KEYS.get(data)
     if not key:
-        return abort(Unauthorized())
+        raise Unauthorized()
 
     if not key['active']:
-        return abort(Forbidden())
+        raise Forbidden()
 
     return key['name']
 
@@ -38,7 +38,7 @@ def get_request_data():
         request_data = request.form
 
     if not request_data:
-        return abort(BadRequest("Missing request data"))
+        raise BadRequest("Missing request data")
 
     return request_data
 
@@ -50,7 +50,7 @@ def get_params(*args):
         for arg in args:
             out[arg] = data[arg]
     except KeyError as e:
-        return abort(BadRequest("Missing {!r} value".format(e.args[0])))
+        raise BadRequest("Missing {!r} value".format(e.args[0]))
 
     return out
 
