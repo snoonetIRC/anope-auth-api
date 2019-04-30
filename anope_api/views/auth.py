@@ -95,8 +95,13 @@ def confirm():
 
 @auth_bp.app_errorhandler(HTTPException)
 def error_handler(error):
-    response = jsonify(message=error.message)
-    response.status_code = error.code if isinstance(error, HTTPException) else 500
+    if isinstance(error, HTTPException):
+        response = jsonify(message=error.description)
+        response.status_code = error.code
+    else:
+        response = jsonify(message="Unknown error")
+        response.status_code = 500
+
     return response
 
 
