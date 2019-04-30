@@ -1,6 +1,6 @@
 import requests
 from flask import abort, Blueprint, current_app, jsonify, request, Response
-from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
+from werkzeug.exceptions import BadRequest, default_exceptions, Forbidden, HTTPException, Unauthorized
 
 from ..api_keys import KEYS
 
@@ -91,3 +91,14 @@ def register():
 @auth_bp.route('/confirm', methods=['POST'])
 def confirm():
     return do_request('/confirm', 'session', 'code')
+
+
+@auth_bp.app_errorhandler(HTTPException)
+def error_handler(error):
+    response = jsonify(message=error.message)
+    response.status_code = error.code if isinstance(error, HTTPException) else 500
+    return response
+
+
+for code, v in default_exceptions.items():
+    auth_bp.app_errorhandler(code)(error_handler)
