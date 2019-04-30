@@ -1,5 +1,5 @@
 import requests
-from flask import abort, Blueprint, current_app, jsonify, request, Response
+from flask import Blueprint, current_app, jsonify, request, Response
 from werkzeug.exceptions import BadRequest, default_exceptions, Forbidden, HTTPException, Unauthorized
 
 from ..api_keys import KEYS
@@ -97,11 +97,15 @@ def confirm():
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
     if isinstance(error, HTTPException):
-        response = jsonify(message=error.description)
-        response.status_code = error.code
+        message = error.description
+        status_code = error.code
     else:
-        response = jsonify(message="Unknown error")
-        response.status_code = 500
+        message = "Unknown error"
+        status_code = 500
+
+    error_data = {'message': message, 'code': status_code}
+    response = jsonify(status='error', error=error_data)
+    response.status_code = status_code
 
     return response
 
