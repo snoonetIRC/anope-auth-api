@@ -94,6 +94,7 @@ def confirm():
 
 
 @auth_bp.app_errorhandler(HTTPException)
+@auth_bp.errorhandler(HTTPException)
 def error_handler(error):
     if isinstance(error, HTTPException):
         response = jsonify(message=error.description)
@@ -107,3 +108,4 @@ def error_handler(error):
 
 for code, v in default_exceptions.items():
     auth_bp.app_errorhandler(code)(error_handler)
+    auth_bp.errorhandler(code)(error_handler)
