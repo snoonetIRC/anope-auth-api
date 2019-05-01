@@ -45,7 +45,7 @@ def get_request_data():
 
 def do_request(endpoint):
     key_name = check_api_key()
-    request_data = get_request_data()
+    request_data = dict(get_request_data())
     request_data['client_id'] = key_name
 
     with requests.post(
