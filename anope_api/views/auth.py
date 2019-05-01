@@ -103,7 +103,7 @@ def error_handler(error):
         message = "Unknown error"
         status_code = 500
 
-    error_data = {'message': message, 'code': status_code}
+    error_data = {'message': message, 'id': "HTTP_{}".format(status_code)}
     response = jsonify(status='error', error=error_data)
     response.status_code = status_code
 
