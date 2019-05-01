@@ -1,6 +1,6 @@
 import requests
 from flask import Blueprint, current_app, jsonify, request, Response
-from werkzeug.exceptions import BadRequest, default_exceptions, Forbidden, HTTPException, Unauthorized
+from werkzeug.exceptions import default_exceptions, HTTPException
 
 from ..api_keys import KEYS
 
@@ -11,22 +11,49 @@ ERROR_MAP = {
 }
 
 
+class APIError(HTTPException):
+    def __init__(self, error_id, description=None, response=None):
+        super().__init__(description=description, response=response)
+        self.id = error_id
+
+
+class NoKey(APIError):
+    code = 401
+
+    def __init__(self):
+        super().__init__('no_key', "No valid API key supplied")
+
+
+class NoAccess(APIError):
+    code = 403
+
+    def __init__(self):
+        super().__init__('no_access', "You do not have permission to access this resource")
+
+
+class NoData(APIError):
+    code = 400
+
+    def __init__(self):
+        super().__init__('no_data', "No request parameters have been supplied")
+
+
 def check_api_key():
     try:
         auth_header = request.headers['Authorization']
     except KeyError:
-        raise Unauthorized()
+        raise NoKey()
 
     auth_type, data = auth_header.split(None, 1)
     if auth_type.lower() != 'bearer':
-        raise Unauthorized()
+        raise NoKey()
 
     key = KEYS.get(data)
     if not key:
-        raise Unauthorized()
+        raise NoKey()
 
     if not key['active']:
-        raise Forbidden()
+        raise NoAccess()
 
     return key['name']
 
@@ -38,7 +65,7 @@ def get_request_data():
         request_data = request.form
 
     if not request_data:
-        raise BadRequest("Missing request data")
+        raise NoData()
 
     return request_data
 
@@ -84,14 +111,21 @@ def confirm():
 @auth_bp.app_errorhandler(HTTPException)
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
-    if isinstance(error, HTTPException):
+    if isinstance(error, APIError):
+        error_data = {
+            'message': error.description,
+            'id': error.id,
+        }
+        status_code = error.code
+    elif isinstance(error, HTTPException):
         message = error.description
         status_code = error.code
+        error_data = {'message': message, 'id': "internal", 'code': status_code}
     else:
         message = "Unknown error"
         status_code = 500
+        error_data = {'message': message, 'id': "internal", 'code': status_code}
 
-    error_data = {'message': message, 'id': "HTTP_{}".format(status_code)}
     response = jsonify(status='error', error=error_data)
     response.status_code = status_code
 
