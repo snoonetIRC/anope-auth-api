@@ -43,21 +43,9 @@ def get_request_data():
     return request_data
 
 
-def get_params(*args):
-    data = get_request_data()
-    out = {}
-    try:
-        for arg in args:
-            out[arg] = data[arg]
-    except KeyError as e:
-        raise BadRequest("Missing {!r} value".format(e.args[0]))
-
-    return out
-
-
-def do_request(endpoint, *args):
+def do_request(endpoint):
     key_name = check_api_key()
-    request_data = get_params(*args)
+    request_data = get_request_data()
     request_data['client_id'] = key_name
 
     with requests.post(
@@ -75,22 +63,22 @@ def do_request(endpoint, *args):
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    return do_request('/login', 'username', 'password')
+    return do_request('/login')
 
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
-    return do_request('/logout', 'session')
+    return do_request('/logout')
 
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    return do_request('/register', 'username', 'password', 'email', 'source')
+    return do_request('/register')
 
 
 @auth_bp.route('/confirm', methods=['POST'])
 def confirm():
-    return do_request('/confirm', 'session', 'code')
+    return do_request('/confirm')
 
 
 @auth_bp.app_errorhandler(HTTPException)
