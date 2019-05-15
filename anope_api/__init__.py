@@ -5,8 +5,11 @@ def create_instance():
 
     instance.config.from_object(Config)
 
-    from anope_api.views.auth import auth_bp
+    from anope_api.views.api.v0.auth import auth_bp
+
     instance.register_blueprint(auth_bp)
+    instance.register_blueprint(auth_bp, url_prefix='/api')
+    instance.register_blueprint(auth_bp, url_prefix='/api/v0')
 
     return instance
 
