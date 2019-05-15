@@ -24,5 +24,4 @@ def get_bool(text):
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
 
-    XMLRPC_URI = os.getenv('XMLRPC_URI') or os.getenv('XMLRPC_ENDPOINT')
-    XMLRPC_TLS_CHECK_HOSTNAME = get_bool(os.getenv('XMLRPC_TLS_CHECK_HOSTNAME') or 'true')
+    API_URL = os.getenv('API_URL') or 'https://127.0.0.1:8888/api'

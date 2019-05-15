@@ -1,6 +1,6 @@
-from flask import Blueprint, current_app
-from flask import jsonify, request, abort
-from werkzeug.exceptions import BadRequest, InternalServerError, Unauthorized, Forbidden
+import requests
+from flask import Blueprint, current_app, jsonify, request, Response
+from werkzeug.exceptions import default_exceptions, HTTPException
 
 from ..api_keys import KEYS
 
@@ -11,65 +11,127 @@ ERROR_MAP = {
 }
 
 
+class APIError(HTTPException):
+    def __init__(self, error_id, description=None, response=None):
+        super().__init__(description=description, response=response)
+        self.id = error_id
+
+
+class NoKey(APIError):
+    code = 401
+
+    def __init__(self):
+        super().__init__('no_key', "No valid API key supplied")
+
+
+class NoAccess(APIError):
+    code = 403
+
+    def __init__(self):
+        super().__init__('no_access', "You do not have permission to access this resource")
+
+
+class NoData(APIError):
+    code = 400
+
+    def __init__(self):
+        super().__init__('no_data', "No request parameters have been supplied")
+
+
 def check_api_key():
     try:
         auth_header = request.headers['Authorization']
     except KeyError:
-        return abort(Unauthorized())
+        raise NoKey()
 
     auth_type, data = auth_header.split(None, 1)
     if auth_type.lower() != 'bearer':
-        return abort(Unauthorized())
+        raise NoKey()
 
     key = KEYS.get(data)
     if not key:
-        return abort(Unauthorized())
+        raise NoKey()
 
     if not key['active']:
-        return abort(Forbidden())
+        raise NoAccess()
 
-    return True
+    return key['name']
 
 
-@auth_bp.route('/login', methods=['POST'])
-def check_auth():
-    check_api_key()
+def get_request_data():
     if request.content_type == 'application/json':
         request_data = request.json
     else:
         request_data = request.form
 
     if not request_data:
-        return abort(BadRequest("Missing request data"))
+        raise NoData()
 
-    try:
-        username = request_data['username']
-        password = request_data['password']
-    except KeyError as e:
-        return abort(BadRequest("Missing {!r} field".format(e.args[0])))
+    return request_data
 
-    if not username.strip() or not password.strip():
-        return abort(BadRequest("Username or password is empty"))
 
-    try:
-        data = current_app.xmlrpc_client.checkAuthentication(username, password)
-    except ConnectionRefusedError:
-        return abort(InternalServerError(
-            "Unable to connect to authentication backend"
-        ))
+def do_request(endpoint):
+    key_name = check_api_key()
+    request_data = dict(get_request_data())
+    request_data['client_id'] = key_name
 
-    error = data.get('error')
-    if error:
-        error_msg = ERROR_MAP.get(error, "other")
-        account = None
-        message = error
+    with requests.post(
+            current_app.config['API_URL'] + endpoint, data=request_data,
+            headers={'X-Real-IP': request.access_route[0]},
+    ) as response:
+        status = response.status_code
+        response_data = response.json()
+
+    response = jsonify(response_data)  # type: Response
+    response.status_code = status
+
+    return response
+
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    return do_request('/login')
+
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    return do_request('/logout')
+
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    return do_request('/register')
+
+
+@auth_bp.route('/confirm', methods=['POST'])
+def confirm():
+    return do_request('/confirm')
+
+
+@auth_bp.app_errorhandler(HTTPException)
+@auth_bp.errorhandler(HTTPException)
+def error_handler(error):
+    if isinstance(error, APIError):
+        error_data = {
+            'message': error.description,
+            'id': error.id,
+        }
+        status_code = error.code
+    elif isinstance(error, HTTPException):
+        message = error.description
+        status_code = error.code
+        error_data = {'message': message, 'id': "internal", 'code': status_code}
     else:
-        error_msg = None
-        account = data['account']
-        message = data['result']
+        message = "Unknown error"
+        status_code = 500
+        error_data = {'message': message, 'id': "internal", 'code': status_code}
 
-    return jsonify({
-        'account': account,
-        'error': error_msg,
-        'message': message,
-    })
+    response = jsonify(status='error', error=error_data)
+    response.status_code = status_code
+
+    return response
+
+
+for code, v in default_exceptions.items():
+    auth_bp.app_errorhandler(code)(error_handler)
+    auth_bp.errorhandler(code)(error_handler)
