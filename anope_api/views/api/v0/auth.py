@@ -2,7 +2,7 @@ import requests
 from flask import Blueprint, current_app, jsonify, request, Response
 from werkzeug.exceptions import default_exceptions, HTTPException
 
-from ..api_keys import KEYS
+from anope_api.api_keys import KEYS
 
 auth_bp = Blueprint('auth', __name__)
 
