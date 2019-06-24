@@ -108,6 +108,21 @@ def confirm():
     return do_request('/confirm')
 
 
+@auth_bp.route('/resetpass', methods=['POST'])
+def resetpass():
+    return do_request('/resetpass')
+
+
+@auth_bp.route('/resetpass/confirm', methods=['POST'])
+def resetpass_confirm():
+    return do_request('/resetpass/confirm')
+
+
+@auth_bp.route('/user/set/password', methods=['POST'])
+def user_set_password():
+    return do_request('/user/set/password')
+
+
 @auth_bp.app_errorhandler(HTTPException)
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
