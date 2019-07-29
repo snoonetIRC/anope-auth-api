@@ -25,3 +25,4 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
 
     API_URL = os.getenv('API_URL') or 'https://127.0.0.1:8888/api'
+    API_TLS_VERIFY = get_bool(os.getenv('API_TLS_VERIFY') or 'true')
