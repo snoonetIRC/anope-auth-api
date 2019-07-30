@@ -74,10 +74,12 @@ def do_request(endpoint):
     key_name = check_api_key()
     request_data = dict(get_request_data())
     request_data['client_id'] = key_name
+    verify = current_app.config['API_TLS_VERIFY']
 
     with requests.post(
             current_app.config['API_URL'] + endpoint, data=request_data,
             headers={'X-Real-IP': request.access_route[0]},
+            verify=verify,
     ) as response:
         status = response.status_code
         response_data = response.json()
