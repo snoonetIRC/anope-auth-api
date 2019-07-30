@@ -17,6 +17,13 @@ class APIError(HTTPException):
         self.id = error_id
 
 
+class NoAuthService(APIError):
+    code = 502
+
+    def __init__(self):
+        super().__init__('no_backend', "Unable to connect to authentication service")
+
+
 class NoKey(APIError):
     code = 401
 
@@ -76,13 +83,17 @@ def do_request(endpoint):
     request_data['client_id'] = key_name
     verify = current_app.config['API_TLS_VERIFY']
 
-    with requests.post(
-            current_app.config['API_URL'] + endpoint, data=request_data,
-            headers={'X-Real-IP': request.access_route[0]},
-            verify=verify,
-    ) as response:
-        status = response.status_code
-        response_data = response.json()
+    try:
+        with requests.post(
+                current_app.config['API_URL'] + endpoint,
+                data=request_data,
+                headers={'X-Real-IP': request.access_route[0]},
+                verify=verify,
+        ) as response:
+            status = response.status_code
+            response_data = response.json()
+    except requests.ConnectionError as e:
+        raise NoAuthService() from e
 
     response = jsonify(response_data)  # type: Response
     response.status_code = status
