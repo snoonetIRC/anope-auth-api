@@ -136,6 +136,21 @@ def user_set_password():
     return do_request('/user/set/password')
 
 
+@auth_bp.route('/user/token/add', methods=['POST'])
+def user_token_add():
+    return do_request('/user/token/add')
+
+
+@auth_bp.route('/user/token/delete', methods=['POST'])
+def user_token_delete():
+    return do_request('/user/token/delete')
+
+
+@auth_bp.route('/user/token/list', methods=['POST'])
+def user_token_list():
+    return do_request('/user/token/list')
+
+
 @auth_bp.app_errorhandler(HTTPException)
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
