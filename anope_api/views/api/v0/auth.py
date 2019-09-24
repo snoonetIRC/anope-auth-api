@@ -6,10 +6,6 @@ from anope_api.api_keys import KEYS
 
 auth_bp = Blueprint('auth', __name__)
 
-ERROR_MAP = {
-    "Invalid password": "no_auth",
-}
-
 
 class APIError(HTTPException):
     def __init__(self, error_id, description=None, response=None):
@@ -45,6 +41,29 @@ class NoData(APIError):
         super().__init__('no_data', "No request parameters have been supplied")
 
 
+class NoEmail(APIError):
+    code = 400
+
+    def __init__(self):
+        super().__init__('missing_email', "Email required")
+
+
+class BadEmail(APIError):
+    code = 400
+
+    def __init__(self):
+        super().__init__('bad_email', "Email address not verified")
+
+
+class MissingParameter(APIError):
+    code = 400
+
+    def __init__(self, param):
+        super().__init__(
+            'missing_parameter', "Missing {!r} parameter".format(param)
+        )
+
+
 def check_api_key():
     try:
         auth_header = request.headers['Authorization']
@@ -65,6 +84,11 @@ def check_api_key():
     return key['name']
 
 
+BLOCK_PARAMS = [
+    'force_confirm',
+]
+
+
 def get_request_data():
     if request.content_type == 'application/json':
         request_data = request.json
@@ -74,13 +98,17 @@ def get_request_data():
     if not request_data:
         raise NoData()
 
-    return request_data
+    return {
+        k: request_data[k] for k in request_data
+        if k.lower() not in BLOCK_PARAMS
+    }
 
 
-def do_request(endpoint):
+def do_request(endpoint, **extra_params):
     key_name = check_api_key()
     request_data = dict(get_request_data())
     request_data['client_id'] = key_name
+    request_data.update(extra_params)
     verify = current_app.config['API_TLS_VERIFY']
 
     try:
@@ -111,8 +139,42 @@ def logout():
     return do_request('/logout')
 
 
+def check_email(email, user):
+    api_url = current_app.config['OAUTH_EMAIL_API']
+    if not api_url:
+        return False
+
+    params = {
+        'email': email,
+        'user': user,
+    }
+
+    try:
+        with requests.get(api_url, params=params) as response:
+            response.raise_for_status()
+            response_data = response.json()
+    except (requests.ConnectionError, requests.RequestException):
+        return False
+
+    return response_data['verified']
+
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    check_api_key()
+    data = get_request_data()
+    if 'oauth' in data:
+        if 'email' not in data:
+            raise NoEmail()
+
+        if 'username' not in data:
+            raise MissingParameter('username')
+
+        if not check_email(data['email'], data['username']):
+            raise BadEmail()
+
+        return do_request('/register', force_confirm='1')
+
     return do_request('/register')
 
 
@@ -175,6 +237,6 @@ def error_handler(error):
     return response
 
 
-for code, v in default_exceptions.items():
+for code, _ in default_exceptions.items():
     auth_bp.app_errorhandler(code)(error_handler)
     auth_bp.errorhandler(code)(error_handler)
