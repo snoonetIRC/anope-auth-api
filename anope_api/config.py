@@ -26,3 +26,4 @@ class Config:
 
     API_URL = os.getenv('API_URL') or 'https://127.0.0.1:8888/api'
     API_TLS_VERIFY = get_bool(os.getenv('API_TLS_VERIFY') or 'true')
+    OAUTH_EMAIL_API = os.getenv('OAUTH_EMAIL_API')
