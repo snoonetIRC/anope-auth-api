@@ -213,6 +213,21 @@ def user_token_list():
     return do_request('/user/token/list')
 
 
+@auth_bp.route('/user/tags/add', methods=['POST'])
+def user_tags_add():
+    return do_request('/user/tags/add')
+
+
+@auth_bp.route('/user/tags/delete', methods=['POST'])
+def user_tags_delete():
+    return do_request('/user/tags/delete')
+
+
+@auth_bp.route('/user/tags/list', methods=['POST'])
+def user_tags_list():
+    return do_request('/user/tags/list')
+
+
 @auth_bp.app_errorhandler(HTTPException)
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
