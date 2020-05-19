@@ -228,6 +228,50 @@ def user_tags_list():
     return do_request('/user/tags/list')
 
 
+@auth_bp.route('/team/create', methods=['POST'])
+def team_create():
+    return do_request('/team/create')
+
+
+@auth_bp.route('/team/delete', methods=['POST'])
+def team_delete():
+    return do_request('/team/delete')
+
+
+@auth_bp.route('/team/list', methods=['POST'])
+def team_list():
+    return do_request('/team/list')
+
+
+@auth_bp.route('/team/manager/add', methods=['POST'])
+def team_manager_add():
+    return do_request('/team/manager/add')
+
+
+@auth_bp.route('/team/manager/delete', methods=['POST'])
+def team_manager_delete():
+    return do_request('/team/manager/delete')
+
+
+@auth_bp.route('/team/manager/list', methods=['POST'])
+def team_manager_list():
+    return do_request('/team/manager/list')
+
+
+@auth_bp.route('/team/member/add', methods=['POST'])
+def team_member_add():
+    return do_request('/team/member/add')
+
+
+@auth_bp.route('/team/member/delete', methods=['POST'])
+def team_member_delete():
+    return do_request('/team/member/delete')
+
+
+@auth_bp.route('/team/member/list', methods=['POST'])
+def team_member_list():
+    return do_request('/team/member/list')
+
 @auth_bp.app_errorhandler(HTTPException)
 @auth_bp.errorhandler(HTTPException)
 def error_handler(error):
