@@ -213,6 +213,11 @@ def user_token_list():
     return do_request('/user/token/list')
 
 
+@auth_bp.route('/user/token/ping', methods=['POST'])
+def user_token_list():
+    return do_request('/user/token/ping')
+
+
 @auth_bp.route('/user/tags/add', methods=['POST'])
 def user_tags_add():
     return do_request('/user/tags/add')
