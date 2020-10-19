@@ -214,7 +214,7 @@ def user_token_list():
 
 
 @auth_bp.route('/user/token/ping', methods=['POST'])
-def user_token_list():
+def user_token_ping():
     return do_request('/user/token/ping')
 
 
